@@ -1,23 +1,21 @@
-require 'rubygems'
-require 'bundler/setup'
-require 'sinatra'
-require 'sinatra/contrib/all'
-
-require_relative 'controller'
+['rubygems', 'bundler/setup', 'sinatra', 'sinatra/contrib/all'].each do |f|
+  require f
+end
 
 Bundler.require(:default, :test, :development)
-set :views, "views"
+set :views, "public"
 
 class App < Sinatra::Base
   register Sinatra::Contrib
+
+  not_found do
+    status 404
+    erb :"404"
+  end
 end
 
-
-require_relative 'app/shopping/controllers/application_controller'
-require_relative 'app/shopping/controllers/shopping_controller'
-require_relative 'app/shopping/controllers/extra_controller'
-
-require_relative 'lib/application_router'
-require_relative 'app/shopping/routes'
+require_all 'app/**/controllers/*'
+require_all 'lib/*'
+require_all 'app/**/routes.rb'
 
 run App
