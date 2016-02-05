@@ -8,6 +8,7 @@ gem "rerun"
 gem "activesupport"
 gem "racksh"
 gem 'require_all'
+gem 'colorize'
 
 group :development do
   gem "pry"
