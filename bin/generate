@@ -1,11 +1,8 @@
 #!/usr/bin/env ruby
-
 ['rubygems', 'bundler/setup'].each do |f|
   require f
 end
-# Bundler.setup(:default, :development)
 Bundler.require(:default, :development)
-
 
 class GenerateTask < Thor
   include Thor::Actions
@@ -26,17 +23,25 @@ class GenerateTask < Thor
     end
   end
 
+  desc "view", "create a new view for a component and controller".yellow
+  def view(controller_name, action_name)
+    component_name = FlowHelper.select_component(self,"Which component will your view belong?")
+    ->(thor){
+      thor.ask "Hey! This number does not correspond to any Component!".red
+      exit
+    }.call(self) unless component_name
+
+    inject_into_file "app/#{component_name}/controllers/#{controller_name}_controller.rb", after: "class ProductController < ApplicationController\n" do
+      FileHelpers.controller_action(action_name)
+    end
+  end
+
   desc "controller", "create a new controller for a component".yellow
   def controller
-    say "Which component will your controller belong?".green
-    Dir.chdir('app/')
-    components = Dir.glob('*').select {|f| File.directory? f}
-    components.each_with_index do |k, v|
-      say "#{k} - #{v}".cyan
-    end
-    number = ask "Type the number:"
 
-    if number.to_i.between?(0,components.count-1)
+    component_name = FlowHelper.select_component(self, "Which component will your controller belong?")
+
+    if component_name
       controller_name = ask "Alright! Whats the controller name?".green
       create_file "app/#{components[number.to_i]}/controllers/#{controller_name}_controller.rb" do
         FileHelpers.component_controller(components[number.to_i], controller_name)
@@ -51,11 +56,63 @@ class GenerateTask < Thor
     else
       ask "Hey! This number does not correspond to any Component!".red
     end
+  end
+end
 
+class FlowHelper
+  def self.select_component(thor,message)
+    select_directories(thor, message, "app/")
+  end
+
+  def self.select_controller(thor,component, message)
+    select_files(thor, message, "app/#{component}/controllers/")
+  end
+
+  def self.select_directories(thor, message, folder)
+    thor.say "#{message}".green
+    Dir.chdir("#{folder}") do
+      files = Dir.glob('*').select {|f| File.directory? f}
+      files.each_with_index do |k, v|
+        thor.say "#{k} - #{v}".cyan
+      end
+      number = thor.ask "Type the number:"
+
+      if number.to_i.between?(0,files.count-1)
+        return files[number.to_i]
+      else
+        return false
+      end
+    end
+
+  end
+
+  def self.select_files(thor, message, folder)
+    thor.say "#{message}".green
+    Dir.chdir("#{folder}") do
+      files = Dir.glob('*')
+      files.each_with_index do |k, v|
+        thor.say "#{k} - #{v}".cyan
+      end
+      number = thor.ask "Type the number:"
+
+      if number.to_i.between?(0,files.count-1)
+        return files[number.to_i]
+      else
+        false
+      end
+    end
   end
 end
 
 class FileHelpers
+  def self.controller_action(action)
+<<-Z
+    def #{action}
+      # your code here
+    end
+Z
+  end
+
   def self.default_view(controller_name, action_name)
 <<-Z
 <h1>This view belongs to #{controller_name}/#{action_name}</h1>
