@@ -7,6 +7,7 @@ gem "sinatra-contrib"
 gem "rerun"
 gem "activesupport"
 gem "racksh"
+gem 'require_all'
 
 group :development do
   gem "pry"

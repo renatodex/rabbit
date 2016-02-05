@@ -12,6 +12,7 @@ class App < Sinatra::Base
   register Sinatra::Contrib
 end
 
+
 require_relative 'app/shopping/controllers/application_controller'
 require_relative 'app/shopping/controllers/shopping_controller'
 require_relative 'app/shopping/controllers/extra_controller'

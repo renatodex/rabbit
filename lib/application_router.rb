@@ -23,16 +23,24 @@ class ApplicationRouterMethods
     end
   end
 
+  # Magic method generation based on most used HTTP Verbs
   [:get, :post, :delete, :put].each do |method|
     define_method(method.to_sym) { |route, controller_action|
       component = self._component
       instance = self
+
+      # Opening the App class and Adding all mapped routes
       App.class_eval do |c|
         self.send(:get, "#{route}", &-> {
           klass_instance = "#{component.to_s.camelize}::#{controller_action.first.to_s.camelize}_controller".camelize.constantize.new
+
+          # 1. Execute the action logic.
           klass_instance.send(controller_action.last.to_sym)
 
-          erb controller_action.last, views: "app/#{component}/views/#{controller_action.first}",
+          # 2. Render the view, passing the correct locals
+          # (basicly it returns a Hash containing all instance variables from controller action)
+          erb controller_action.last,
+            views: "app/#{component}/views/#{controller_action.first}",
             locals: instance.set_locals(app, klass_instance)
         })
       end
