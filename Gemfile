@@ -11,6 +11,7 @@ gem 'require_all'
 
 group :development do
   gem "pry"
+  gem "thor"
 end
 
 # setup our test group and require rspec
