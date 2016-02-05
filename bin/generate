@@ -1,0 +1,110 @@
+#!/usr/bin/env ruby
+
+['rubygems', 'bundler/setup'].each do |f|
+  require f
+end
+# Bundler.setup(:default, :development)
+Bundler.require(:default, :development)
+
+
+class GenerateTask < Thor
+  include Thor::Actions
+
+  desc "component", "create a new component".yellow
+  def component
+    component_name = ask "Choose the name of you component (like a variable):".green
+    empty_directory "app/#{component_name}"
+    empty_directory "app/#{component_name}/controllers"
+    empty_directory "app/#{component_name}/public"
+    empty_directory "app/#{component_name}/models"
+    empty_directory "app/#{component_name}/views"
+    create_file "app/#{component_name}/controllers/application_controller.rb" do
+      FileHelpers.application_controller(component_name)
+    end
+    create_file "app/#{component_name}/routes.rb" do
+      FileHelpers.routes(component_name)
+    end
+  end
+
+  desc "controller", "create a new controller for a component".yellow
+  def controller
+    say "Which component will your controller belong?".green
+    Dir.chdir('app/')
+    components = Dir.glob('*').select {|f| File.directory? f}
+    components.each_with_index do |k, v|
+      say "#{k} - #{v}".cyan
+    end
+    number = ask "Type the number:"
+
+    if number.to_i.between?(0,components.count-1)
+      controller_name = ask "Alright! Whats the controller name?".green
+      create_file "app/#{components[number.to_i]}/controllers/#{controller_name}_controller.rb" do
+        FileHelpers.component_controller(components[number.to_i], controller_name)
+      end
+      inject_into_file "app/#{components[number.to_i]}/routes.rb", before: "end" do
+        FileHelpers.route_entry("index", controller_name)
+      end
+      empty_directory "app/#{components[number.to_i]}/views/#{controller_name}"
+      create_file "app/#{components[number.to_i]}/views/#{controller_name}/index.erb" do
+        FileHelpers.default_view(controller_name, "index")
+      end
+    else
+      ask "Hey! This number does not correspond to any Component!".red
+    end
+
+  end
+end
+
+class FileHelpers
+  def self.default_view(controller_name, action_name)
+<<-Z
+<h1>This view belongs to #{controller_name}/#{action_name}</h1>
+Z
+  end
+
+  def self.route_entry(action, controller_name)
+    "\troute.get '/#{action}', [:#{controller_name},:#{action}]\n"
+  end
+
+  def self.component_controller(component_name, controller_name)
+<<-Z
+module #{component_name.camelize}
+  class #{controller_name.camelize}Controller < ApplicationController
+    def index
+    end
+  end
+end
+Z
+  end
+
+  def self.application_controller(component_name)
+<<-Z
+module #{component_name.camelize}
+  class ApplicationController
+  end
+end
+Z
+  end
+
+  def self.routes(component_name)
+<<-Z
+ApplicationRouter.define do |route|
+  route.component :#{component_name}
+
+  # To create a route, use the following sintax:
+  # route.get '/myroute', [:controller_name, :action_name]
+  #
+  # Example:
+  # route.get '/users/:id', [:users, :show]
+  # route.post '/users', [:users, :create]
+  #
+  # You can also specify the root action, ex:
+  # route.get '/', [:home, :index]
+end
+Z
+  end
+end
+
+
+GenerateTask.start
+exit
