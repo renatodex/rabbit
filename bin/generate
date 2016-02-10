@@ -43,14 +43,14 @@ class GenerateTask < Thor
 
     if component_name
       controller_name = ask "Alright! Whats the controller name?".green
-      create_file "app/#{components[number.to_i]}/controllers/#{controller_name}_controller.rb" do
-        FileHelpers.component_controller(components[number.to_i], controller_name)
+      create_file "app/#{component_name}/controllers/#{controller_name}_controller.rb" do
+        FileHelpers.component_controller(component_name, controller_name)
       end
-      inject_into_file "app/#{components[number.to_i]}/routes.rb", before: "end" do
+      inject_into_file "app/#{component_name}/routes.rb", before: "end" do
         FileHelpers.route_entry("index", controller_name)
       end
-      empty_directory "app/#{components[number.to_i]}/views/#{controller_name}"
-      create_file "app/#{components[number.to_i]}/views/#{controller_name}/index.erb" do
+      empty_directory "app/#{component_name}/views/#{controller_name}"
+      create_file "app/#{component_name}/views/#{controller_name}/index.erb" do
         FileHelpers.default_view(controller_name, "index")
       end
     else
